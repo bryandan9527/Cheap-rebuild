@@ -1,0 +1,177 @@
+{
+  "source_path": "corpus/cheap_corpus.md",
+  "entry_count": 256,
+  "high_confidence_count": 256,
+  "low_confidence_count": 0,
+  "char_count": {
+    "min": 71,
+    "median": 342.0,
+    "max": 3794
+  },
+  "topic_count_distribution": {
+    "1": 179,
+    "2": 62,
+    "3": 13,
+    "4": 2
+  },
+  "reasoning_pattern_distribution": [
+    [
+      "歷史國際映射",
+      70
+    ],
+    [
+      "先定調再追責",
+      52
+    ],
+    [
+      "情境推演判斷",
+      39
+    ],
+    [
+      "抽象議題翻成生活常識",
+      35
+    ],
+    [
+      "誘因白話拆解",
+      23
+    ],
+    [
+      "反例打臉",
+      15
+    ],
+    [
+      "荒謬成本換算",
+      13
+    ],
+    [
+      "風險收益審判",
+      9
+    ]
+  ],
+  "route_distribution": [
+    [
+      "先拉外部案例再映射當下",
+      70
+    ],
+    [
+      "先摘要再翻成白話",
+      58
+    ],
+    [
+      "先定調再往上追責",
+      52
+    ],
+    [
+      "先列劇本再收斂判斷",
+      39
+    ],
+    [
+      "先拋說法再反例拆解",
+      15
+    ],
+    [
+      "先算帳再放大荒謬",
+      13
+    ],
+    [
+      "先驗證可置信性再下判決",
+      9
+    ]
+  ],
+  "topic_distribution": [
+    [
+      "topic/public_governance",
+      111
+    ],
+    [
+      "topic/international_security",
+      78
+    ],
+    [
+      "topic/partisan_attack",
+      47
+    ],
+    [
+      "topic/tech_media_ai",
+      39
+    ],
+    [
+      "topic/traffic_governance",
+      26
+    ],
+    [
+      "topic/lifestyle_consumer",
+      24
+    ],
+    [
+      "topic/design_branding",
+      18
+    ],
+    [
+      "topic/history_counterfactual",
+      7
+    ]
+  ],
+  "topic_clusters": [
+    [
+      "cluster/international_security",
+      54
+    ],
+    [
+      "cluster/partisan_attack",
+      42
+    ],
+    [
+      "cluster/public_governance",
+      30
+    ],
+    [
+      "cluster/traffic_governance",
+      24
+    ],
+    [
+      "cluster/design_branding",
+      14
+    ],
+    [
+      "cluster/lifestyle_consumer",
+      11
+    ],
+    [
+      "cluster/tech_media_ai",
+      10
+    ],
+    [
+      "cluster/history_counterfactual",
+      4
+    ],
+    [
+      "cluster/自由時報獨家報導_女大生因為擔心前往女警靈堂致歉時會被打_所以先",
+      2
+    ],
+    [
+      "cluster/老實樹羅一鈞說今年漢他病毒案例就兩例_沒有高於以往_請大家不要過",
+      1
+    ],
+    [
+      "cluster/現在脆上狂罵郁方_看郁方被炮成這樣真可憐_要關心虐童案就罵台北市",
+      1
+    ],
+    [
+      "cluster/某政論節目昨天的圖卡_民眾黨好感度墊底_阿北與國蔥的好感度_只有",
+      1
+    ],
+    [
+      "cluster/白沙屯媽祖進香報名人數突破_46_萬人_但隨著人潮湧入_垃圾問題",
+      1
+    ],
+    [
+      "cluster/以前叫做_史瓦濟蘭_是位在非洲南部的一個小國_人口120萬人_面",
+      1
+    ],
+    [
+      "cluster/前幾天GoPro宣布大裁員_五年來股價暴跌93_去年淨虧30億台",
+      1
+    ]
+  ]
+}

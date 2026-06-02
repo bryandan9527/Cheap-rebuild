@@ -1,0 +1,31 @@
+{
+  "EventBrief": {
+    "event_summary": "一句到三句摘要事件本身",
+    "stance": "作者想站的角度或判決方向",
+    "target": "主要對象，例如政府、政黨、設計團隊、媒體",
+    "key_numbers": ["可換算的數字、時間、比例、金額"],
+    "counterexamples": ["更強反例、外部案例、成熟制度"],
+    "analogy_candidates": ["可畫面化的類比"],
+    "logic_flip_points": ["哪一句最值得反打"],
+    "source_snippets": ["原話、新聞句子、官方回應"],
+    "constraints": ["禁用角度、語氣限制、長度限制"]
+  },
+  "ReasoningDecision": {
+    "selected_reasoning": "誘因白話拆解",
+    "why_this_reasoning": "這題最強材料是官話與風向，不是數字或劇本推演",
+    "recommended_angle": "把表面說法翻成白話，指出誰在保位子、保風向、甩鍋"
+  },
+  "RouteDecision": {
+    "selected_route": "先摘要再翻成白話",
+    "why_this_route": "這個 reasoning 需要先交代事件，再做白話翻譯與動機拆解",
+    "opening_move": "摘要開場",
+    "must_include_moves": ["白話翻譯", "動機拆解", "邏輯反打"],
+    "recommended_post_type": "多段拆解"
+  },
+  "TopicDecision": {
+    "selected_topics": ["topic/public_governance", "topic/partisan_attack"],
+    "why_these_topics": "事件同時涉及制度官話與政黨甩鍋，但主 reasoning 不變",
+    "topic_constraints": ["不要只寫政論口水", "要保留制度層說明"],
+    "topic_materials": ["官方說法", "權責", "時間序列"]
+  }
+}
