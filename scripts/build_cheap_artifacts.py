@@ -10,9 +10,13 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CORPUS_PATH = ROOT / "corpus" / "cheap_corpus.md"
-ARTIFACTS_DIR = ROOT / "artifacts"
-ENTRY_SPLIT_RE = re.compile(r"^(\d{4})\s*$", flags=re.M)
+CORPUS_SOURCE_DIR = ROOT / "corpus" / "source"
+CORPUS_DERIVED_DIR = ROOT / "corpus" / "derived"
+MERGED_PATH = CORPUS_DERIVED_DIR / "cheap_corpus_merged.md"
+RECORDS_PATH = CORPUS_DERIVED_DIR / "cheap_corpus_records.jsonl"
+TAXONOMY_PATH = CORPUS_DERIVED_DIR / "cheap_taxonomy.json"
+SUMMARY_PATH = CORPUS_DERIVED_DIR / "cheap_corpus_summary.json"
+ANALYSIS_PATH = CORPUS_DERIVED_DIR / "cheap_corpus_analysis.md"
 INLINE_LABEL_RE = re.compile(r"^(?P<label>[^：:\n]{1,24})[：:]\s*")
 
 CHEAP_PUSH_MOVES = {
@@ -143,7 +147,7 @@ TOPIC_MATCHERS: list[tuple[str, str, list[str]]] = [
     ("topic/design_branding", r"台電|中油|于右任|聶永真|LOGO|logo|字體|識別|市旗|府徽|品牌", ["logo_or_branding"]),
     ("topic/traffic_governance", r"庇護島|人行道|斑馬線|行人|路肩|違停|車禍|駕駛|機車道", ["traffic_scene"]),
     ("topic/partisan_attack", r"民進黨|國民黨|立委|大內宣|甩鍋|側翼|青鳥|小草|罷免", ["partisan_attack"]),
-    ("topic/public_governance", r"補助|修法|NCC|勞動部|政府|政策|市府|立法院|法規|預算", ["policy_governance"]),
+    ("topic/public_governance", r"補助|修法|NCC|勞動部|政府|政策|市府|立法院|法規|預算|法官|司法|法院|羈押|檢方|承審|逃亡風險|滅證|勾串", ["policy_governance"]),
     ("topic/international_security", r"烏克蘭|俄羅斯|川普|伊朗|北約|韓國|尹錫悅|美國|德國|捷克|外交|軍演", ["international_security"]),
     ("topic/tech_media_ai", r"AI|ChatGPT|Gemini|Grok|假訊息|查核|梗圖|截圖|threads|Thread", ["tech_media"]),
     ("topic/lifestyle_consumer", r"國旅|公園|日本自駕|瘦瘦針|咖啡|按摩|抽菸|菸蒂|菜單|旅遊", ["lifestyle_consumer"]),
@@ -154,7 +158,7 @@ TOPIC_CLUSTER_RULES: list[tuple[str, str]] = [
     ("cluster/design_branding", r"台電|中油|于右任|聶永真|台灣電力公司|LOGO|logo|鼎泰豐"),
     ("cluster/traffic_governance", r"庇護島|人行道|斑馬線|行人|路肩|違停|車禍|高雄汽車撞行人"),
     ("cluster/partisan_attack", r"民進黨|國民黨|立委|大內宣|甩鍋|側翼|青鳥|小草"),
-    ("cluster/public_governance", r"補助|修法|NCC|勞動部|政府|政策|市府|立法院"),
+    ("cluster/public_governance", r"補助|修法|NCC|勞動部|政府|政策|市府|立法院|法官|司法|法院|羈押|檢方|承審|逃亡風險|滅證|勾串"),
     ("cluster/international_security", r"烏克蘭|俄羅斯|川普|伊朗|北約|韓國|美國|德國|捷克"),
     ("cluster/history_counterfactual", r"二戰|正史|三國|黃忠|魯肅|曹真|蘇軾|諾貝爾文學獎"),
     ("cluster/lifestyle_consumer", r"國旅|公園|日本自駕|瘦瘦針|咖啡|按摩|抽菸|菸蒂"),
@@ -168,24 +172,28 @@ def normalize_text(text: str) -> str:
     return text.strip()
 
 
+def entry_id_from_source(path: Path) -> str:
+    return f"{int(path.stem[4:]):04d}"
+
+
 def load_entries() -> list[dict[str, Any]]:
-    text = CORPUS_PATH.read_text()
-    parts = ENTRY_SPLIT_RE.split(text)
     entries: list[dict[str, Any]] = []
-    for i in range(1, len(parts), 2):
-        entry_id = parts[i]
-        raw_text = parts[i + 1].strip()
+    for source_path in sorted(CORPUS_SOURCE_DIR.glob("clip*.md"), key=lambda item: int(item.stem[4:])):
+        raw_text = source_path.read_text().strip()
         clean_text = normalize_text(raw_text)
         entries.append(
             {
-                "entry_id": entry_id,
-                "source_family": "cheap_corpus_markdown",
+                "entry_id": entry_id_from_source(source_path),
+                "source_path": str(source_path.relative_to(ROOT)),
+                "source_family": "cheap_corpus_source_files",
                 "char_count": len(clean_text),
                 "raw_text": raw_text,
                 "clean_text": clean_text,
                 "low_confidence_flag": raw_text.startswith("這張相片來自一則貼文"),
             }
         )
+    if not entries:
+        raise SystemExit("no corpus source files found under corpus/source")
     return entries
 
 
@@ -230,9 +238,7 @@ def infer_topic_tags(text: str, topic_cluster_id: str) -> tuple[list[str], list[
             topic_tags.append(topic_id)
             topic_signals.extend(signals)
     if topic_tags:
-        deduped_tags = list(dict.fromkeys(topic_tags))
-        deduped_signals = list(dict.fromkeys(topic_signals))
-        return deduped_tags, deduped_signals
+        return list(dict.fromkeys(topic_tags)), list(dict.fromkeys(topic_signals))
 
     cluster_fallback = {
         "cluster/design_branding": "topic/design_branding",
@@ -259,7 +265,9 @@ def infer_reasoning_pattern(entry: dict[str, Any]) -> str:
     risk_reward = has_any(text, ["風險", "收益", "核爆", "值得", "代價"])
     incentives = has_any(text, ["大內宣", "甩鍋", "護航", "凝聚共識", "暫緩", "沒有關係", "其實", "因為"])
     moral = has_any(text, ["可悲", "爛", "豈有此理", "離譜", "噁", "可惡", "瘋子"])
-    public_mechanics = has_any(text, ["人行道", "庇護島", "檢查", "逐顆", "政策", "制度", "工程"])
+    common_sense = has_any(text, ["高深法理", "常識問題", "正常人都知道", "怎麼能怪人民不信任", "翻成日常", "生活常識"])
+    public_mechanics = has_any(text, ["人行道", "庇護島", "檢查", "逐顆", "政策", "制度", "工程", "人民不信任司法", "法官", "司法", "法院", "羈押"])
+    judicial_mechanics = has_any(text, ["法官", "司法", "法院", "羈押", "檢方", "承審", "勾串", "滅證", "逃亡風險"])
 
     if plain_language and incentives:
         return "誘因白話拆解"
@@ -269,13 +277,15 @@ def infer_reasoning_pattern(entry: dict[str, Any]) -> str:
         return "荒謬成本換算"
     if history and has_any(text, ["反觀", "歷史", "正史", "日本", "美國", "越南", "烏克蘭", "韓國"]):
         return "歷史國際映射"
+    if common_sense and (public_mechanics or judicial_mechanics):
+        return "抽象議題翻成生活常識"
     if risk_reward:
         return "風險收益審判"
     if scenario:
         return "情境推演判斷"
     if counterexample:
         return "反例打臉"
-    if public_mechanics or plain_language:
+    if public_mechanics or judicial_mechanics or plain_language:
         return "抽象議題翻成生活常識"
     if moral or entry["char_count"] <= 220:
         return "先定調再追責"
@@ -434,11 +444,7 @@ def infer_evidence_shape(text: str) -> list[str]:
     return deduped
 
 
-def infer_cheap_push_moves(
-    argument_moves: list[str],
-    reasoning_pattern: str,
-    evidence_shape: list[str],
-) -> list[str]:
+def infer_cheap_push_moves(argument_moves: list[str], reasoning_pattern: str, evidence_shape: list[str]) -> list[str]:
     cheap_push_moves = [move for move in argument_moves if move in CHEAP_PUSH_MOVES]
 
     if "國外對照" in argument_moves or "歷史映射" in argument_moves or "counterexample" in evidence_shape:
@@ -524,7 +530,8 @@ def build_summary(entries: list[dict[str, Any]]) -> dict[str, Any]:
     char_counts = [entry["char_count"] for entry in entries]
     topic_count_dist = Counter(len(entry["topic_tags"]) for entry in entries)
     return {
-        "source_path": str(CORPUS_PATH.relative_to(ROOT)),
+        "source_root": str(CORPUS_SOURCE_DIR.relative_to(ROOT)),
+        "derived_root": str(CORPUS_DERIVED_DIR.relative_to(ROOT)),
         "entry_count": len(entries),
         "high_confidence_count": len(high_confidence),
         "low_confidence_count": len(entries) - len(high_confidence),
@@ -551,6 +558,11 @@ def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
             handle.write(json.dumps(row, ensure_ascii=False) + "\n")
 
 
+def write_merged(entries: list[dict[str, Any]]) -> None:
+    blocks = [f'{entry["entry_id"]}\n\n{entry["clean_text"]}' for entry in entries]
+    MERGED_PATH.write_text("\n\n".join(blocks) + "\n")
+
+
 def write_analysis_markdown(summary: dict[str, Any]) -> None:
     reasoning_lines = "\n".join(
         f"- `{name}`: {count} 篇" for name, count in summary["reasoning_pattern_distribution"]
@@ -567,7 +579,8 @@ def write_analysis_markdown(summary: dict[str, Any]) -> None:
     md = f"""# Cheap Corpus Analysis
 
 ## Snapshot
-- 語料檔：`{summary["source_path"]}`
+- 語料來源：`{summary["source_root"]}`
+- 衍生輸出：`{summary["derived_root"]}`
 - 總篇數：`{summary["entry_count"]}`
 - 高信心樣本：`{summary["high_confidence_count"]}`
 - 低信心樣本：`{summary["low_confidence_count"]}`
@@ -590,24 +603,25 @@ def write_analysis_markdown(summary: dict[str, Any]) -> None:
 ## Topic Clusters
 {cluster_lines}
 """
-    (ARTIFACTS_DIR / "cheap_corpus_analysis.md").write_text(md)
+    ANALYSIS_PATH.write_text(md)
 
 
 def main() -> None:
-    ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
+    CORPUS_DERIVED_DIR.mkdir(parents=True, exist_ok=True)
     entries = load_entries()
     annotated = annotate(entries)
     summary = build_summary(annotated)
-    write_jsonl(ARTIFACTS_DIR / "cheap_corpus_records.jsonl", annotated)
+    write_merged(annotated)
+    write_jsonl(RECORDS_PATH, annotated)
     write_json(
-        ARTIFACTS_DIR / "cheap_taxonomy.json",
+        TAXONOMY_PATH,
         {
             "reasoning_patterns": REASONING_PATTERNS,
             "routes": ROUTES,
             "topics": TOPICS,
         },
     )
-    write_json(ARTIFACTS_DIR / "cheap_corpus_summary.json", summary)
+    write_json(SUMMARY_PATH, summary)
     write_analysis_markdown(summary)
 
 
